@@ -18,7 +18,7 @@
       state: directory
   - name: Edit sudoers file so admin can run rsync
     lineinfile:
-      path: /etc/sudoers
+      dest: /etc/sudoers
       line: 'admin ALL= NOPASSWD:/usr/bin/rsync'
   - name: Copy go tarball to atomic host
     synchronize:
