@@ -1,0 +1,65 @@
+## As of right now, this playbook only supports
+## running the latest runc unit testing from
+## github.com
+#
+## The reboot tasks come from common/ans_reboot.yaml
+## from projectatomic/atomic-hosts-tests on github
+#
+## Requirements:
+##      - go1.8.linux-amd64.tar.gz in local dir
+##      - runc dir from github.com in local dir
+- hosts: all
+  tasks:
+  - name: Setup proper directory structure
+    file:
+      path: /root/src/github.com/opencontainers
+      state: directory
+  - name: Copy go tarball to atomic host
+    copy:
+      dest: /root/go1.8.linux-amd64.tar.gz
+      src: ./go1.8.linux-amd64.tar.gz
+  - name: Copy runc github directory to atomic host
+    copy:
+      dest: /root/src/github.com/opencontainers/runc
+      src: ./runc
+  - name: Install go
+    unarchive:
+      src: /root/go1.8.linux-amd64.tar.gz
+      dest: /usr/local
+      copy: no
+  - name: Add go to PATH env variable
+    lineinfile:
+      dest: /root/.bashrc
+      line: 'export PATH=$PATH:/usr/local/go/bin'
+      insertafter: 'EOF'
+      regexp: 'export PATH=\$PATH:/usr/local/go/bin'
+      state: present
+  - name: Source the .bashrc file
+    shell: source /root/.bashrc
+  - name: Install required packages on atomic host
+    shell: "rpm-ostree install {{ item }}"
+    with_items:
+      - libseccomp-devel
+      - gcc
+    ignore_errors: true
+  - name: Restart hosts
+    shell: sleep 3 && shutdown -r now
+    async: 1
+    poll: 0
+    ignore_errors: true
+  - name: wait for hosts to go down
+    local_action:
+      wait_for host={{ real_ansible_host }}
+      port=22 state=absent delay=1 timeout=120
+    become: false
+  - name: wait for hosts to come back up
+    local_action:
+      wait_for host={{ real_ansible_host }}
+      port=22 state=started delay=30 timeout=120
+    become: false
+  - name: Run unit tests
+    make:
+      target: localunittest
+      chdir: /root/src/github.com/opencontainers/runc
+    async: 600
+    poll: 10
