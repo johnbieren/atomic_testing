@@ -56,13 +56,13 @@
       copy: no
   - name: Add go to PATH env variable
     lineinfile:
-      dest: /root/.bashrc
+      dest: /home/admin/.bashrc
       line: 'export PATH=$PATH:/usr/local/go/bin'
       insertafter: 'EOF'
       regexp: 'export PATH=\$PATH:/usr/local/go/bin'
       state: present
   - name: Source the .bashrc file
-    shell: source /root/.bashrc
+    shell: source /home/admin/.bashrc
   - name: Run unit tests
     make:
       target: localunittest
