@@ -16,6 +16,10 @@
     file:
       path: /root/src/github.com/opencontainers
       state: directory
+  - name: Edit sudoers file so admin can run rsync
+    lineinfile:
+      path: /etc/sudoers
+      line: 'admin ALL= NOPASSWD:/usr/bin/rsync'
   - name: Copy go tarball to atomic host
     synchronize:
       dest: /root/go1.8.linux-amd64.tar.gz
