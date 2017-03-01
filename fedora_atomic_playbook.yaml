@@ -10,18 +10,20 @@
 ##      - runc dir from github.com in local dir
 - hosts: all
   tasks:
+  - set_fact:
+      real_ansible_host: "{{ ansible_host }}"
   - name: Setup proper directory structure
     file:
       path: /root/src/github.com/opencontainers
       state: directory
   - name: Copy go tarball to atomic host
-    copy:
+    synchronize:
       dest: /root/go1.8.linux-amd64.tar.gz
       src: ./go1.8.linux-amd64.tar.gz
   - name: Copy runc github directory to atomic host
-    copy:
+    synchronize:
       dest: /root/src/github.com/opencontainers/runc
-      src: ./runc
+      src: ./runc/
   - name: Install go
     unarchive:
       src: /root/go1.8.linux-amd64.tar.gz
