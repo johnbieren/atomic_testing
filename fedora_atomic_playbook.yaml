@@ -20,6 +20,27 @@
     lineinfile:
       dest: /etc/sudoers
       line: 'admin ALL= NOPASSWD:/usr/bin/rsync'
+  - name: Install required packages on atomic host
+    shell: "rpm-ostree install {{ item }}"
+    with_items:
+      - libseccomp-devel
+      - gcc
+    ignore_errors: true
+  - name: Restart hosts
+    shell: sleep 3 && shutdown -r now
+    async: 1
+    poll: 0
+    ignore_errors: true
+  - name: wait for hosts to go down
+    local_action:
+      wait_for host={{ real_ansible_host }}
+      port=22 state=absent delay=1 timeout=120
+    become: false
+  - name: wait for hosts to come back up
+    local_action:
+      wait_for host={{ real_ansible_host }}
+      port=22 state=started delay=30 timeout=120
+    become: false
   - name: Copy go tarball to atomic host
     synchronize:
       dest: /root/go1.8.linux-amd64.tar.gz
@@ -42,27 +63,6 @@
       state: present
   - name: Source the .bashrc file
     shell: source /root/.bashrc
-  - name: Install required packages on atomic host
-    shell: "rpm-ostree install {{ item }}"
-    with_items:
-      - libseccomp-devel
-      - gcc
-    ignore_errors: true
-  - name: Restart hosts
-    shell: sleep 3 && shutdown -r now
-    async: 1
-    poll: 0
-    ignore_errors: true
-  - name: wait for hosts to go down
-    local_action:
-      wait_for host={{ real_ansible_host }}
-      port=22 state=absent delay=1 timeout=120
-    become: false
-  - name: wait for hosts to come back up
-    local_action:
-      wait_for host={{ real_ansible_host }}
-      port=22 state=started delay=30 timeout=120
-    become: false
   - name: Run unit tests
     make:
       target: localunittest
