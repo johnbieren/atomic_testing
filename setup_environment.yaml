@@ -1,0 +1,16 @@
+## This playbook sets up your environment for
+## proper running of fedora_atomic_playbook.yaml
+#
+## Result:
+##      - go1.8.linux-amd64.tar.gz in local dir
+##      - runc dir from github.com in local dir
+- hosts: all
+  tasks:
+  - name: Get go tarball
+    get_url:
+      url: https://storage.googleapis.com/golang/go1.8.linux-amd64.tar.gz
+      dest: ./
+  - name: Clone runc git directory
+    git:
+      repo: https://github.com/opencontainers/runc
+      dest: ./runc
