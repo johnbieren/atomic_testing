@@ -64,8 +64,10 @@
   - name: Source the .bashrc file
     shell: source /home/admin/.bashrc
   - name: Run unit tests
-    make:
-      target: localunittest
+    shell: 'make localunittest'
+    args:
       chdir: /root/src/github.com/opencontainers/runc
     async: 600
     poll: 10
+    ignore_errors: yes
+    become_user: admin
