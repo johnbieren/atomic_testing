@@ -1,6 +1,7 @@
 ## As of right now, this playbook only supports
 ## running the latest runc unit testing from
-## github.com
+## github.com and the etcd integration testing
+## also from github.com
 #
 ## The reboot tasks come from common/ans_reboot.yaml
 ## from projectatomic/atomic-hosts-tests on github
@@ -8,13 +9,18 @@
 ## Requirements:
 ##      - go1.8.linux-amd64.tar.gz in local dir
 ##      - runc dir from github.com in local dir
+##      - etcd dir from github.com in local dir
 - hosts: all
   tasks:
   - set_fact:
       real_ansible_host: "{{ ansible_host }}"
-  - name: Setup proper directory structure
+  - name: Setup proper directory structure for runc
     file:
       path: /home/admin/src/github.com/opencontainers
+      state: directory
+  - name: Setup proper directory structure for etcd
+    file:
+      path: /home/admin/src/github.com/coreos
       state: directory
   - name: Edit sudoers file so admin can run rsync
     lineinfile:
@@ -49,6 +55,10 @@
     synchronize:
       dest: /home/admin/src/github.com/opencontainers/runc
       src: ./runc/
+  - name: Copy etcd github directory to atomic host
+    synchronize:
+      dest: /home/admin/src/github.com/coreos/etcd
+      src: ./etcd/
   - name: Install go
     unarchive:
       src: /home/admin/go1.8.linux-amd64.tar.gz
@@ -64,9 +74,9 @@
   - name: Add go to GOPATH env variable
     lineinfile:
       dest: /home/admin/.bashrc
-      line: 'export GOPATH=/home/admin'
+      line: 'export GOPATH=/home/admin:/home/admin/src/github.com/coreos/etcd/gopath'
       insertafter: 'EOF'
-      regexp: 'export GOPATH=/home/admin'
+      regexp: 'export GOPATH=/home/admin:/home/admin/src/github.com/coreos/etcd/gopath'
       state: present
   - name: Source the .bashrc file
     shell: source /home/admin/.bashrc
@@ -76,10 +86,42 @@
       owner: admin
       group: admin
       recurse: yes
-  - name: Run unit tests
+  - name: Run runc unit tests
     shell: 'make localunittest > unit-test.txt'
     args:
       chdir: /home/admin/src/github.com/opencontainers/runc
+    async: 600
+    poll: 10
+    ignore_errors: yes
+    become_user: admin
+  - name: Build etcd gopath
+    shell: './build'
+    args:
+      chdir: /home/admin/src/github.com/coreos/etcd
+    async: 600
+    poll: 10
+    ignore_errors: yes
+    become_user: admin
+  - name: Run etcd integration tests
+    shell: 'go test -v > integration-test.txt'
+    args:
+      chdir: /home/admin/src/github.com/coreos/etcd/integration
+    async: 600
+    poll: 10
+    ignore_errors: yes
+    become_user: admin
+  - name: Run etcd client integration tests
+    shell: 'go test -v > client-integration-test.txt'
+    args:
+      chdir: /home/admin/src/github.com/coreos/etcd/client/integration
+    async: 600
+    poll: 10
+    ignore_errors: yes
+    become_user: admin
+  - name: Run etcd clientv3 integration tests
+    shell: 'go test -v > clientv3-integration-test.txt'
+    args:
+      chdir: /home/admin/src/github.com/coreos/etcd/clientv3/integration
     async: 600
     poll: 10
     ignore_errors: yes
