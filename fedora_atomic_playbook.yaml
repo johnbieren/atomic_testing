@@ -9,13 +9,12 @@
 ##      - go1.8.linux-amd64.tar.gz in local dir
 ##      - runc dir from github.com in local dir
 - hosts: all
-  remote_user: root
   tasks:
   - set_fact:
       real_ansible_host: "{{ ansible_host }}"
   - name: Setup proper directory structure
     file:
-      path: /root/src/github.com/opencontainers
+      path: /home/admin/src/github.com/opencontainers
       state: directory
   - name: Install required packages on atomic host
     shell: "rpm-ostree install {{ item }}"
@@ -40,30 +39,35 @@
     become: false
   - name: Copy go tarball to atomic host
     synchronize:
-      dest: /root/go1.8.linux-amd64.tar.gz
+      dest: /home/admin/go1.8.linux-amd64.tar.gz
       src: ./go1.8.linux-amd64.tar.gz
   - name: Copy runc github directory to atomic host
     synchronize:
-      dest: /root/src/github.com/opencontainers/runc
+      dest: /home/admin/src/github.com/opencontainers/runc
       src: ./runc/
   - name: Install go
     unarchive:
-      src: /root/go1.8.linux-amd64.tar.gz
+      src: /home/admin/go1.8.linux-amd64.tar.gz
       dest: /usr/local
       copy: no
   - name: Add go to PATH env variable
     lineinfile:
-      dest: /root/.bashrc
+      dest: /home/admin/.bashrc
       line: 'export PATH=$PATH:/usr/local/go/bin'
       insertafter: 'EOF'
       regexp: 'export PATH=\$PATH:/usr/local/go/bin'
       state: present
   - name: Source the .bashrc file
-    shell: source /root/.bashrc
+    shell: source /home/admin/.bashrc
+  - name: Let admin own the runc directory
+    file:
+      path: /home/admin/src/github.com/opencontainers/runc
+      owner: admin
+      group: admin
   - name: Run unit tests
     shell: 'make localunittest'
     args:
-      chdir: /root/src/github.com/opencontainers/runc
+      chdir: /home/admin/src/github.com/opencontainers/runc
     async: 600
     poll: 10
     ignore_errors: yes
