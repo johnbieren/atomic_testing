@@ -9,6 +9,7 @@
 ##      - go1.8.linux-amd64.tar.gz in local dir
 ##      - runc dir from github.com in local dir
 - hosts: all
+  remote_user: root
   tasks:
   - set_fact:
       real_ansible_host: "{{ ansible_host }}"
@@ -16,10 +17,6 @@
     file:
       path: /root/src/github.com/opencontainers
       state: directory
-  - name: Edit sudoers file so admin can run rsync
-    lineinfile:
-      dest: /etc/sudoers
-      line: 'admin ALL= NOPASSWD:/usr/bin/rsync'
   - name: Install required packages on atomic host
     shell: "rpm-ostree install {{ item }}"
     with_items:
@@ -56,13 +53,13 @@
       copy: no
   - name: Add go to PATH env variable
     lineinfile:
-      dest: /home/admin/.bashrc
+      dest: /root/.bashrc
       line: 'export PATH=$PATH:/usr/local/go/bin'
       insertafter: 'EOF'
       regexp: 'export PATH=\$PATH:/usr/local/go/bin'
       state: present
   - name: Source the .bashrc file
-    shell: source /home/admin/.bashrc
+    shell: source /root/.bashrc
   - name: Run unit tests
     shell: 'make localunittest'
     args:
@@ -70,4 +67,3 @@
     async: 600
     poll: 10
     ignore_errors: yes
-    become_user: admin
