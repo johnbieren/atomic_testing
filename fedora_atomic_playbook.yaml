@@ -70,11 +70,12 @@
       state: present
   - name: Source the .bashrc file
     shell: source /home/admin/.bashrc
-  - name: Let admin own the runc directory
+  - name: Let admin own the testing directory
     file:
-      path: /home/admin/src/github.com/opencontainers/runc
+      path: /home/admin/src
       owner: admin
       group: admin
+      recurse: yes
   - name: Run unit tests
     shell: 'make localunittest'
     args:
@@ -82,3 +83,4 @@
     async: 600
     poll: 10
     ignore_errors: yes
+    become_user: admin
