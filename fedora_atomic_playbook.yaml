@@ -86,6 +86,11 @@
       owner: admin
       group: admin
       recurse: yes
+  - name: Remove build from runc localunittest make target
+    lineinfile:
+      path: /home/admin/src/github.com/opencontainers/runc/Makefile
+      regexp: 'localunittest: all'
+      line: 'localunittest:'
   - name: Run runc unit tests
     shell: 'make localunittest > unit-test.txt'
     args:
