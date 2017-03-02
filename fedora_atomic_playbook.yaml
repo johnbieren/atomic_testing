@@ -88,7 +88,7 @@
       recurse: yes
   - name: Remove build from runc localunittest make target
     lineinfile:
-      path: /home/admin/src/github.com/opencontainers/runc/Makefile
+      dest: /home/admin/src/github.com/opencontainers/runc/Makefile
       regexp: 'localunittest: all'
       line: 'localunittest:'
   - name: Run runc unit tests
@@ -101,7 +101,7 @@
     become_user: admin
   - name: Remove etcd_build from etcd build file. Only want go path set
     lineinfile:
-      path: /home/admin/src/github.com/coreos/etcd/build
+      dest: /home/admin/src/github.com/coreos/etcd/build
       state: absent
       regexp: 'etcd_build$'
   - name: Build etcd gopath
