@@ -16,6 +16,10 @@
     file:
       path: /home/admin/src/github.com/opencontainers
       state: directory
+  - name: Edit sudoers file so admin can run rsync
+    lineinfile:
+      dest: /etc/sudoers
+      line: 'admin ALL= NOPASSWD:/usr/bin/rsync'
   - name: Install required packages on atomic host
     shell: "rpm-ostree install {{ item }}"
     with_items:
@@ -56,6 +60,13 @@
       line: 'export PATH=$PATH:/usr/local/go/bin'
       insertafter: 'EOF'
       regexp: 'export PATH=\$PATH:/usr/local/go/bin'
+      state: present
+  - name: Add go to GOPATH env variable
+    lineinfile:
+      dest: /home/admin/.bashrc
+      line: 'export GOPATH=/home/admin'
+      insertafter: 'EOF'
+      regexp: 'export GOPATH=/home/admin'
       state: present
   - name: Source the .bashrc file
     shell: source /home/admin/.bashrc
