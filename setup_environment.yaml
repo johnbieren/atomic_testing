@@ -20,3 +20,5 @@
     git:
       repo: https://github.com/sstephenson/bats
       dest: ./bats
+      refspec: '+refs/pull/161/head:refs/remotes/origin/pr/161'
+      version: c575354

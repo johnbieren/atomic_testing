@@ -89,10 +89,14 @@
     command: bats/install.sh /usr/local
     args:
       chdir: /home/admin/src/github.com/sstephenson
+  - name: Create reports dir
+    file:
+      path: /home/admin/src/github.com/opencontainers/runc/reports
+      state: directory
   - name: Run runc integration tests
-    shell: '/usr/local/bin/bats *.bats > integration-test.txt'
+    shell: '/usr/local/bin/bats -t -u tests/integration ; mv TestReport-bats*.xml reports/'
     args:
-      chdir: /home/admin/src/github.com/opencontainers/runc/tests/integration
+      chdir: /home/admin/src/github.com/opencontainers/runc
     async: 600
     poll: 10
     ignore_errors: yes
