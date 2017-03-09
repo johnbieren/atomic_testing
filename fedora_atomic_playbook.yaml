@@ -94,7 +94,7 @@
       path: /home/admin/src/github.com/opencontainers/runc/reports
       state: directory
   - name: Run runc integration tests
-    shell: ssh -o NoHostAuthenticationForLocalhost -t -t localhost 'cd /home/admin/src/github.com/opencontainers/runc ; export PATH=$PATH:/usr/local/go/bin ; export GOPATH=/home/admin ; /usr/local/bin/bats -t -u tests/integration ; mv TestReport-bats*.xml reports/'
+    shell: "/usr/local/bin/bats -t -u tests/integration ; mv TestReport-bats*.xml reports/"
     async: 600
     poll: 10
     ignore_errors: yes
