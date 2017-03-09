@@ -3,8 +3,7 @@
 #
 ## Result:
 ##      - go1.8.linux-amd64.tar.gz in local dir
-##      - runc dir from github.com in local dir
-##      - etcd dir from github.com in local dir
+##      - runc dir from github.com in local dir with proper commit
 - hosts: all
   tasks:
   - name: Get go tarball
@@ -15,7 +14,4 @@
     git:
       repo: https://github.com/opencontainers/runc
       dest: ./runc
-  - name: Clone etcd git directory
-    git:
-      repo: https://github.com/coreos/etcd
-      dest: ./etcd
+      version: "{{ runc_commit }}"
