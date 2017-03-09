@@ -1,15 +1,10 @@
 ## As of right now, this playbook only supports
-## running the latest runc unit testing from
-## github.com and the etcd integration testing
-## also from github.com
-#
-## The reboot tasks come from common/ans_reboot.yaml
-## from projectatomic/atomic-hosts-tests on github
+## running the runc integration testing from
+## github.com
 #
 ## Requirements:
 ##      - go1.8.linux-amd64.tar.gz in local dir
 ##      - runc dir from github.com in local dir
-##      - etcd dir from github.com in local dir
 - hosts: all
   tasks:
   - set_fact:
@@ -18,35 +13,14 @@
     file:
       path: /home/admin/src/github.com/opencontainers
       state: directory
-  - name: Setup proper directory structure for etcd
+  - name: Setup proper directory structure for bats
     file:
-      path: /home/admin/src/github.com/coreos
+      path: /home/admin/src/github.com/sstephenson
       state: directory
   - name: Edit sudoers file so admin can run rsync
     lineinfile:
       dest: /etc/sudoers
       line: 'admin ALL= NOPASSWD:/usr/bin/rsync'
-  - name: Install required packages on atomic host
-    shell: "rpm-ostree install {{ item }}"
-    with_items:
-      - libseccomp-devel
-      - gcc
-    ignore_errors: true
-  - name: Restart hosts
-    shell: sleep 3 && shutdown -r now
-    async: 1
-    poll: 0
-    ignore_errors: true
-  - name: wait for hosts to go down
-    local_action:
-      wait_for host={{ real_ansible_host }}
-      port=22 state=absent delay=1 timeout=120
-    become: false
-  - name: wait for hosts to come back up
-    local_action:
-      wait_for host={{ real_ansible_host }}
-      port=22 state=started delay=30 timeout=120
-    become: false
   - name: Copy go tarball to atomic host
     synchronize:
       dest: /home/admin/go1.8.linux-amd64.tar.gz
@@ -55,10 +29,10 @@
     synchronize:
       dest: /home/admin/src/github.com/opencontainers/runc
       src: ./runc/
-  - name: Copy etcd github directory to atomic host
+  - name: Copy bats github directory to atomic host
     synchronize:
-      dest: /home/admin/src/github.com/coreos/etcd
-      src: ./etcd/
+      dest: /home/admin/src/github.com/sstephenson/bats
+      src: ./bats/
   - name: Install go
     unarchive:
       src: /home/admin/go1.8.linux-amd64.tar.gz
@@ -86,53 +60,39 @@
       owner: admin
       group: admin
       recurse: yes
-  - name: Remove build from runc localunittest make target
+  - name: Change helpers.bash INTEGRATION_ROOT for runc integration testing
     lineinfile:
-      dest: /home/admin/src/github.com/opencontainers/runc/Makefile
-      regexp: 'localunittest: all'
-      line: 'localunittest:'
-  - name: Run runc unit tests
-    shell: 'make localunittest > unit-test.txt'
-    args:
-      chdir: /home/admin/src/github.com/opencontainers/runc
-    async: 600
-    poll: 10
-    ignore_errors: yes
-    become_user: admin
-  - name: Remove etcd_build from etcd build file. Only want go path set
+      dest: /home/admin/src/github.com/opencontainers/runc/tests/integration/helpers.bash
+      regexp: 'INTEGRATION_ROOT='
+      line: 'INTEGRATION_ROOT=/home/admin/src/github.com/opencontainers/runc/tests/integration'
+  - name: Change helpers.bash RUNC path for runc integration testing
     lineinfile:
-      dest: /home/admin/src/github.com/coreos/etcd/build
-      state: absent
-      regexp: 'etcd_build$'
-  - name: Build etcd gopath
-    shell: './build'
+      dest: /home/admin/src/github.com/opencontainers/runc/tests/integration/helpers.bash
+      regexp: 'RUNC='
+      line: 'RUNC=/usr/bin/runc'
+  - name: Change helpers.bash GOPATH for runc integration testing
+    lineinfile:
+      dest: /home/admin/src/github.com/opencontainers/runc/tests/integration/helpers.bash
+      regexp: 'GOPATH='
+      line: 'GOPATH=/home/admin'
+  - name: Unlock ostree so we can change /tmp (req. for integration testing)
+    shell: "ostree admin unlock"
+  - name: Move /tmp to a new location
+    shell: "mv /tmp /tmp_moved"
+  - name: Create new /tmp dir
+    file:
+      path: /tmp
+      state: directory
+  - name: Bind mount new /tmp dir to old /tmp dir's symlink
+    shell: "mount --bind /sysroot/tmp /tmp"
+  - name: Install bats
+    command: bats/install.sh /usr/local
     args:
-      chdir: /home/admin/src/github.com/coreos/etcd
+      chdir: /home/admin/src/github.com/sstephenson
+  - name: Run runc integration tests
+    shell: '/usr/local/bin/bats *.bats > integration-test.txt'
+    args:
+      chdir: /home/admin/src/github.com/opencontainers/runc/tests/integration
     async: 600
     poll: 10
     ignore_errors: yes
-    become_user: admin
-  - name: Run etcd integration tests
-    shell: 'go test -v > integration-test.txt'
-    args:
-      chdir: /home/admin/src/github.com/coreos/etcd/integration
-    async: 600
-    poll: 10
-    ignore_errors: yes
-    become_user: admin
-  - name: Run etcd client integration tests
-    shell: 'go test -v > client-integration-test.txt'
-    args:
-      chdir: /home/admin/src/github.com/coreos/etcd/client/integration
-    async: 600
-    poll: 10
-    ignore_errors: yes
-    become_user: admin
-  - name: Run etcd clientv3 integration tests
-    shell: 'go test -v > clientv3-integration-test.txt'
-    args:
-      chdir: /home/admin/src/github.com/coreos/etcd/clientv3/integration
-    async: 600
-    poll: 10
-    ignore_errors: yes
-    become_user: admin
