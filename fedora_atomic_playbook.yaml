@@ -93,3 +93,8 @@
     file:
       path: /home/admin/src/github.com/opencontainers/runc/reports
       state: directory
+  - name: Allow root login to enable integration testing via ssh
+    lineinfile:
+      dest: /etc/ssh/sshd.conf
+      regexp: 'PermitRootLogin'
+      line: 'PermitRootLogin yes'
