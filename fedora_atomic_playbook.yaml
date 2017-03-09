@@ -7,8 +7,6 @@
 ##      - runc dir from github.com in local dir
 - hosts: all
   tasks:
-  - set_fact:
-      real_ansible_host: "{{ ansible_host }}"
   - name: Setup proper directory structure for runc
     file:
       path: /home/admin/src/github.com/opencontainers
