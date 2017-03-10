@@ -92,4 +92,4 @@
       path: /home/admin/src/github.com/opencontainers/runc/reports
       state: directory
   - name: Allow root login to enable integration testing via ssh
-    shell: "mv -f /home/admin/.ssh/authorized_keys /root/.ssh/authorized_keys"
+    shell: "cp -f /home/admin/.ssh/authorized_keys /root/.ssh/authorized_keys"
